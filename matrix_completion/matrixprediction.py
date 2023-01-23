@@ -10,6 +10,8 @@ import scipy.sparse as sp
 import utils.ml_pipeline as pipeline
 import analytics.stats as stats
 
+
+
 #k fold cross validation for matrix completion problems
 # Input: adjacency matrix
 # Algorithm to use
@@ -18,6 +20,107 @@ import analytics.stats as stats
 # Number of folds for cross-valudation
 
 from sklearn.model_selection import KFold
+
+"""
+def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
+    dense_adj_matrix = adj_matrix.toarray()
+    nonzero_row_indices, nonzero_col_indices = np.where(dense_adj_matrix != 0)
+    data = list(zip(nonzero_row_indices, nonzero_col_indices))
+    folds = pipeline.kfold_CV_split(data, num_folds)
+
+    accuracy_fold_data = list()
+    false_positive_rate_fold_data = list()
+    time_fold_data = list()
+
+    for fold_index in range(num_folds):
+        train_points = pipeline.join_folds(folds, fold_index)
+        test_points = folds[fold_index]
+        test_row_indices, test_col_indices = zip(*test_points)
+        test_labels = adj_matrix[test_row_indices, test_col_indices].A[0]
+        
+        for i in range(len(train_points)):
+            train_point = train_points[i]
+            train_row_indices, train_col_indices = zip(*train_points)
+            train_labels = adj_matrix[train_row_indices, train_col_indices].A[0]
+            train_matrix = sp.csr_matrix((train_labels, (train_row_indices, train_col_indices)), shape=adj_matrix.shape)
+            
+            before_train = time.time()
+            train_complet = matrix_completion(train_matrix, alg, alg_params)
+            after_train = time.time()
+            model_time = after_train - before_train
+            
+            preds = train_complet[test_row_indices, test_col_indices]
+            acc, fpr = pipeline.evaluate(preds, test_labels)
+            print(len(preds))
+            print("Fold %d, Train point %d: accuracy=%f, computation time=%f" % (fold_index, i, acc, model_time))
+            
+            accuracy_fold_data.append(acc)
+            false_positive_rate_fold_data.append(fpr)
+            time_fold_data.append(model_time)
+    avg_acc = sum(accuracy_fold_data) / float(len(accuracy_fold_data))
+    avg_fpr = sum(false_positive_rate_fold_data) / float(len(false_positive_rate_fold_data))
+    avg_time = sum(time_fold_data) / float(len(time_fold_data))
+    acc_stderr = stats.error_width(stats.sample_std(accuracy_fold_data), num_folds)
+    fpr_stderr = stats.error_width(stats.sample_std(false_positive_rate_fold_data), num_folds)
+    time_stderr = stats.error_width(stats.sample_std(time_fold_data), num_folds)
+    return avg_acc, acc_stderr, avg_fpr, fpr_stderr, avg_time, time_stderr
+"""
+
+def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
+    dense_adj_matrix = adj_matrix.toarray()
+    nonzero_row_indices, nonzero_col_indices = np.where(dense_adj_matrix != 0)
+    if len(nonzero_row_indices) != len(nonzero_col_indices):
+        raise ValueError("The number of non-zero row indices and non-zero column indices do not match.")
+    data = list(zip(nonzero_row_indices, nonzero_col_indices))
+    folds = pipeline.kfold_CV_split(data, num_folds)
+
+    accuracy_fold_data = list()
+    false_positive_rate_fold_data = list()
+    time_fold_data = list()
+    for fold_index in range(num_folds):
+        print("Fold %d" % (fold_index + 1))
+        train_points = pipeline.join_folds(folds, fold_index)
+        test_points = folds[fold_index]
+        test_row_indices, test_col_indices = zip(*test_points)
+        test_labels = adj_matrix[test_row_indices, test_col_indices].A[0]
+        train_matrix = sp.csr_matrix(([], ([], [])), shape = adj_matrix.shape)
+        print(len(train_points))
+        for i in range(1, len(train_points)+1):
+            train_points_subset = train_points[:i]
+            train_row_indices, train_col_indices = zip(*train_points_subset)
+            train_labels = adj_matrix[train_row_indices, train_col_indices].A[0]
+            new_train_matrix = sp.csr_matrix((train_labels, (train_row_indices, train_col_indices)), shape = adj_matrix.shape)
+            train_matrix = train_matrix + new_train_matrix
+            before_train = time.time()
+            train_complet = matrix_completion(train_matrix, alg, alg_params)
+            after_train = time.time()
+            model_time = after_train - before_train
+            
+            preds = train_complet[test_row_indices, test_col_indices]
+            acc, fpr = pipeline.evaluate(preds, test_labels)
+            
+            print("Fold %d, Iteration %d, Time: %f" % (fold_index + 1, i, model_time))
+
+            accuracy_fold_data.append(acc)
+            false_positive_rate_fold_data.append(fpr)
+            time_fold_data.append(model_time)
+
+    avg_acc = sum(accuracy_fold_data) / float(len(accuracy_fold_data))
+    avg_fpr = sum(false_positive_rate_fold_data) / float(len(false_positive_rate_fold_data))
+    avg_time = sum(time_fold_data) / float(len(time_fold_data))
+    acc_stderr = stats.error_width(stats.sample_std(accuracy_fold_data), num_folds)
+    fpr_stderr = stats.error_width(stats.sample_std(false_positive_rate_fold_data), num_folds)
+    time_stderr = stats.error_width(stats.sample_std(time_fold_data), num_folds)
+
+    return avg_acc, avg_fpr, avg_time, fpr_stderr, avg_time, time_stderr
+
+
+
+
+
+
+"""
+    
 
 def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
   #get folds
@@ -56,6 +159,7 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
 
   #perform learning problem on each fold
   for fold_index in range(num_folds):
+    
     print("Fold %d" % (fold_index + 1))
     #get train data for learning problem
     
@@ -98,6 +202,8 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
   fpr_stderr = stats.error_width(stats.sample_std(false_positive_rate_fold_data), num_folds)
   time_stderr = stats.error_width(stats.sample_std(time_fold_data), num_folds)
   return avg_acc, acc_stderr, avg_fpr, fpr_stderr, avg_time, time_stderr
+
+"""
 
 #Matrix completion with matrix factorization
 #Input: matrix to complete

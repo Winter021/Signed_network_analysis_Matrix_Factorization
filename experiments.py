@@ -31,8 +31,8 @@ def run_experiment():
   use_moi = False #True
   use_hoc = False #True
   use_svp = True
-  use_sgd_sh = True
-  use_sgd_sig = True
+  use_sgd_sh = False 
+  use_sgd_sig = False
   use_als = False #True
 
   adj_matrix = None
@@ -44,7 +44,8 @@ def run_experiment():
     adj_matrix = sim.sample_network(cluster_sizes, sparsity_level, noise_prob)
 
   elif real:
-    data_file_name = "data/Preprocessed Data/small_network.npy"
+    data_file_name = "data/Preprocessed Data/evomain_csr.npy"
+    #data_file_name = "data/Preprocessed Data/small_network.npy"
     #data_file_name = "data/Preprocessed Data/wiki_elections_csr.npy"
     try:
       adj_matrix = np.load(data_file_name).item()

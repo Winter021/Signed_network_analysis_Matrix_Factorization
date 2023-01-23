@@ -34,18 +34,18 @@ def sign_prediction_SVP(adj_matrix,
   #Iterate until tolerance level or maximum # iters is reached
   while num_iters <= max_iter and not within_tol(solution, adj_matrix, tol):
     #update
-    print ("projection")
+    #print ("projection")
     rows, cols = adj_matrix.nonzero()
     solution = solution - step_size*(projection(
                           solution, rows, cols) - adj_matrix)
     #compute top <rank> SVs
     solution = solution.asfptype()
-    print ("svd")
+    #print ("svd")
     left_svecs, svals, right_svecs = svd(solution.A)
     
     #form low rank approximation
     solution = sp.csr_matrix(np.dot(np.dot(left_svecs[:,:rank], np.diag(svals[:rank])), right_svecs[:rank,:]))
-    print( "completed iteration ", num_iters)
+    #print( "completed iteration ", num_iters)
     num_iters += 1
 
   #confirm that solution (before signing, which will change things) is desired rank
