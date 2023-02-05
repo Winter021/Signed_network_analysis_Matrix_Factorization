@@ -10,7 +10,8 @@ import scipy.sparse as sp
 import utils.ml_pipeline as pipeline
 import analytics.stats as stats
 
-
+import os
+import pickle
 
 #k fold cross validation for matrix completion problems
 # Input: adjacency matrix
@@ -66,6 +67,9 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
     return avg_acc, acc_stderr, avg_fpr, fpr_stderr, avg_time, time_stderr
 """
 
+
+
+""""""
 def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
     dense_adj_matrix = adj_matrix.toarray()
     nonzero_row_indices, nonzero_col_indices = np.where(dense_adj_matrix != 0)
@@ -84,16 +88,25 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
         test_row_indices, test_col_indices = zip(*test_points)
         test_labels = adj_matrix[test_row_indices, test_col_indices].A[0]
         train_matrix = sp.csr_matrix(([], ([], [])), shape = adj_matrix.shape)
-        print(len(train_points))
+
         for i in range(1, len(train_points)+1):
             train_points_subset = train_points[:i]
             train_row_indices, train_col_indices = zip(*train_points_subset)
             train_labels = adj_matrix[train_row_indices, train_col_indices].A[0]
             new_train_matrix = sp.csr_matrix((train_labels, (train_row_indices, train_col_indices)), shape = adj_matrix.shape)
             train_matrix = train_matrix + new_train_matrix
-            before_train = time.time()
-            train_complet = matrix_completion(train_matrix, alg, alg_params)
-            after_train = time.time()
+            
+            model_filename = "fold_{}_iteration_{}.pkl".format(fold_index + 1, i)
+            if os.path.exists(model_filename):
+                with open(model_filename, "rb") as f:
+                    train_complet = pickle.load(f)
+            else:
+                before_train = time.time()
+                train_complet = matrix_completion(train_matrix, alg, alg_params)
+                after_train = time.time()
+                with open(model_filename, "wb") as f:
+                    pickle.dump(train_complet, f)
+                    
             model_time = after_train - before_train
             
             preds = train_complet[test_row_indices, test_col_indices]

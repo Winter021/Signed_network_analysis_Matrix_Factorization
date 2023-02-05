@@ -23,8 +23,18 @@ import analytics.stats as stats
 
 import time
 
+import networkx as nx
+import re
+from data.preprocess_ES import preprocess
+
+# Create an empty graph
+
+
 #Run experiments on different algorithms on the same network
+
+"""
 def run_experiment():
+  G = nx.Graph()
   simulated = False
   real = True
 
@@ -44,13 +54,18 @@ def run_experiment():
     adj_matrix = sim.sample_network(cluster_sizes, sparsity_level, noise_prob)
 
   elif real:
-    data_file_name = "data/Preprocessed Data/evomain_csr.npy"
-    #data_file_name = "data/Preprocessed Data/small_network.npy"
+    data_file_name = "data/Preprocessed Data/small_network.npy"
+    # data_file_name = "data/Preprocessed Data/epinions_csr.txt"
     #data_file_name = "data/Preprocessed Data/wiki_elections_csr.npy"
-    try:
-      adj_matrix = np.load(data_file_name).item()
-    except Exception as e:
-      raise ValueError("could not load adj matrix from file: ", e)
+    batch_size = 10000
+    
+    adj_matrix_list = []
+    for data_batch in preprocess(data_file_name, batch_size):
+      # convert each data batch to an adjacency matrix
+      adj_matrix = nx.adjacency_matrix(data_batch).todense()
+      adj_matrix_list.append(adj_matrix)
+    adj_matrix = np.concatenate(adj_matrix_list, axis=0)
+
 
   if use_moi:
     print ("performing MOI...")
@@ -165,5 +180,141 @@ def run_experiment():
     print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
     print
 
+"""
+
+
+
+
+
+import os
+
+def run_experiment():
+    G = nx.Graph()
+    simulated = False
+    real = True
+
+    use_moi = False
+    use_hoc = False
+    use_svp = True
+    use_sgd_sh = False
+    use_sgd_sig = False
+    use_als = False
+
+    adj_matrix = None
+    if simulated:
+        cluster_sizes = [100,200,300,400]
+        sparsity_level = 0.01175
+        noise_prob = 0
+        print ("creating adjacency matrix...")
+        adj_matrix = sim.sample_network(cluster_sizes, sparsity_level, noise_prob)
+
+    elif real:
+        # data_file_name = "data/Preprocessed Data/epinions_csr.txt"
+        # data_file_name = "data/Preprocessed Data/small_network.npy"
+        # data_file_name = "data/Preprocessed Data/wiki_elections_csr.npy"
+        data_folder = "data/Preprocessed Data/"
+        results = []
+        for data_file_name in os.listdir(data_folder):
+            if data_file_name.endswith(".npy"):
+                try:
+                    adj_matrix = np.load(os.path.join(data_folder, data_file_name)).item()
+                except Exception as e:
+                    raise ValueError("could not load adj matrix from file: ", e)
+                print(adj_matrix.get_shape())
+                if use_svp:
+                    # Parameters used for this experiment
+                    rank = 40
+                    tol = 100
+                    max_iter = 5
+                    step_size = 1
+
+                    # Bundle up these parameters and use this algorithm
+                    alg_params = (rank, tol, max_iter, step_size)
+                    alg = "svp"
+
+                    num_folds_mf = 10
+
+                    print(f"performing SVP on {data_file_name}...")
+                    avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+                        mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
+                    print(f"SVP results on {data_file_name}:")
+                    print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
+                    print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
+                    print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
+                    results.append((data_file_name, avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time))
+        return results
+
+
 if __name__ == "__main__":
   run_experiment()
+
+
+
+
+
+"""
+
+
+def run_experiment():
+  G = nx.Graph()
+  simulated = False
+  real = True
+
+  use_moi = False #True
+  use_hoc = False #True
+  use_svp = True
+  use_sgd_sh = False 
+  use_sgd_sig = False
+  use_als = False #True
+
+  adj_matrix = None
+  if simulated:
+    cluster_sizes = [100,200,300,400]
+    sparsity_level = 0.01175
+    noise_prob = 0
+    print ("creating adjacency matrix...")
+    adj_matrix = sim.sample_network(cluster_sizes, sparsity_level, noise_prob)
+
+  elif real:
+    # data_file_name = "data/Preprocessed Data/epinions_csr.txt"
+    data_file_name = "data/Preprocessed Data/small_network.npy"
+    #data_file_name = "data/Preprocessed Data/wiki_elections_csr.npy"
+    try:
+      # with open(data_file_name, 'r') as f:
+      #   for line in f:
+      #       u, v, sign = re.findall(r'\S+', line)
+      #       if sign == "1":
+      #           G.add_edge(u, v)
+      #       else:
+      #           G.add_edge(u, v, sign='-')
+      adj_matrix = np.load(data_file_name).item()
+      # adj_matrix = nx.adjacency_matrix(G)
+      # adj_matrix = adj_matrix.todense()
+    except Exception as e:
+      raise ValueError("could not load adj matrix from file: ", e)
+
+  if use_svp:
+    #Parameters used for this experiment
+    rank = 40
+    tol = 100
+    max_iter = 5
+    step_size = 1
+
+    #Bundle up these parameters and use this algorithm
+    alg_params = (rank, tol, max_iter, step_size)
+    alg = "svp"
+
+    num_folds_mf = 10
+    
+    print ("performing SVP...")
+    avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+          mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
+    print ("SVP results:")
+    print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
+    print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
+    print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
+    print
+
+
+
+"""
