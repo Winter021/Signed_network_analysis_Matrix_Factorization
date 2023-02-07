@@ -66,9 +66,66 @@ def preprocess(batch_size = 1000, mode = "normal"):
 
 """
 
+
 def preprocess(batch_size = 1000, mode = "normal"):
-  #FILE_PATH = "Raw Data/soc-sign-evomain.txt"
-  FILE_PATH = "Raw Data/soc-sign-epinions.txt"
+  FILE_PATH = "Raw Data/soc-sign-evomain.txt"
+  #FILE_PATH = "Raw Data/soc-evomain.txt"
+  #FILE_PATH = "Raw Data/soc-sign-Slashdot090221.txt"
+
+  #Dataset name (for filename of matrix)
+  #Split off part right before file extension
+  dataset = FILE_PATH.split(".txt")[0].split("-")[-1]
+
+  with open(FILE_PATH, "rb") as data_file:
+    data_lines = data_file.readlines()
+    #Save components of data in three lists kept in synchrony
+    from_data = list()
+    to_data = list()
+    labels = list()
+
+    #Data format: each line FROM_ID TO_ID LABEL
+    for line_index in range(4, len(data_lines)): #skip first 4 boilerplate lines
+      data = data_lines[line_index].split()
+      from_data.append(int(data[0]))
+      to_data.append(int(data[1]))
+      labels.append(int(data[2]))
+    #Get the number of people (as given by ID. note: ID starts at 0)
+    max_id = len(from_data)
+    # Use a sliding window approach to handle large data size
+    for i in range(0, max_id + 1, batch_size):
+        start = i
+        end = min(i + batch_size, max_id + 1)
+
+        # Create a (square) adjacency matrix for the current batch
+        batch_from_data = [x for j, (x, y) in enumerate(zip(from_data, to_data)) if start <= j < end]
+        batch_to_data = [y for j, (x, y) in enumerate(zip(from_data, to_data)) if start <= j < end]
+        batch_labels = [label for j, (x, y, label) in enumerate(zip(from_data, to_data, labels)) if start <= j < end]
+
+        
+        print(len(batch_labels))
+        print(end-start)
+        data_matrix = sp.csr_matrix((np.array(batch_labels), (np.array(batch_from_data), np.array(batch_to_data)) ),
+                                      shape=(end - start, end - start), dtype=np.int8)
+
+        # Correction to make data matrix symmetric
+        if (data_matrix != data_matrix.transpose()).nnz > 0:  # data matrix is not symmetric
+          data_matrix = (data_matrix + data_matrix.transpose()).sign()
+
+        #test data is a valid symmetric signed matrix
+        if mode == "test":
+          assert data_matrix.min() == -1
+          assert data_matrix.max() == 1
+          assert (data_matrix != data_matrix.transpose()).nnz == 0
+
+        # Save the matrix in batch
+        np.save("Preprocessed Data/" + dataset + "_batch_" + str(i), data_matrix)
+
+
+
+"""
+def preprocess(batch_size = 1000, mode = "normal"):
+  FILE_PATH = "Raw Data/soc-sign-evomain.txt"
+  #FILE_PATH = "Raw Data/soc-evomain.txt"
   #FILE_PATH = "Raw Data/soc-sign-Slashdot090221.txt"
 
   #Dataset name (for filename of matrix)
@@ -112,13 +169,14 @@ def preprocess(batch_size = 1000, mode = "normal"):
 
     # Save the matrix in batches
     num_batches = int(max_id / batch_size) + 1
+    print(num_batches)
     for i in range(num_batches):
         start = i * batch_size
         end = min((i + 1) * batch_size, max_id + 1)
         batch = data_matrix[start:end, start:end]
         np.save("Preprocessed Data/" + dataset + "_batch_" + str(i), batch)
 
-
+"""
 
 if __name__ == "__main__":
   preprocess()
