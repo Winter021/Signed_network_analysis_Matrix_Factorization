@@ -68,7 +68,7 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
 
 
 """
-
+"""
 def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
     dense_adj_matrix = adj_matrix.toarray()
     nonzero_row_indices, nonzero_col_indices = np.where(dense_adj_matrix != 0)
@@ -109,18 +109,18 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
     fpr_stderr = stats.error_width(stats.sample_std(false_positive_rate_fold_data), num_folds)
     time_stderr = stats.error_width(stats.sample_std(time_fold_data), num_folds)
     return avg_acc, acc_stderr, avg_fpr, fpr_stderr, avg_time, time_stderr
-
-
-
 """
+
+
+
 def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
   #get folds
   # nonzero_row_indices, nonzero_col_indices = np.nonzero(adj_matrix) # .nonzero() is depreciated
-  
+
   dense_adj_matrix = adj_matrix.toarray()
   nonzero_row_indices, nonzero_col_indices = np.where(dense_adj_matrix != 0)
 
-  
+
   # print("nonzero row indices",len(nonzero_row_indices))
   # print("nonzero col indices",len(nonzero_col_indices))
 
@@ -135,7 +135,7 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
   labels = adj_matrix[nonzero_row_indices, nonzero_col_indices]
   print("labels : ",labels)
   # print("labels : ",labels)
-  
+
   data = list(zip(nonzero_row_indices, nonzero_col_indices))
   folds = pipeline.kfold_CV_split(data, num_folds)
   # folds = pipeline.kfold_CV_split(nonzero_row_indices,nonzero_col_indices, num_folds) #debug
@@ -152,14 +152,14 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
   for fold_index in range(num_folds):
     print("Fold %d" % (fold_index + 1))
     #get train data for learning problem
-    
+
     train_points = pipeline.join_folds(folds, fold_index)
-   
+
     # print("train point lengt : ",len(train_points)) #debug
 
 
     train_row_indices, train_col_indices = zip(*train_points)
-    
+
     train_labels = adj_matrix[train_row_indices, train_col_indices].A[0] #array of signs of training edges
     #construct matrix using just training edges
     train_matrix = sp.csr_matrix((train_labels, (train_row_indices, train_col_indices)), shape = adj_matrix.shape)
@@ -195,7 +195,6 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
 
 
 
-"""
 """
     
 

@@ -195,8 +195,8 @@ def run_experiment():
 
     use_moi = False
     use_hoc = False
-    use_svp = True
-    use_sgd_sh = False
+    use_svp = False
+    use_sgd_sh = True
     use_sgd_sig = False
     use_als = False
 
@@ -242,6 +242,44 @@ def run_experiment():
                     print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
                     print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
                     results.append((data_file_name, avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time))
+                if use_sgd_sh or use_sgd_sig:
+                    #Parameters used for this experiment
+
+                    #https://www.cs.uic.edu/~liub/KDD-cup-2007/proceedings/Regular-Paterek.pdf
+                    learning_rate = 1000#0.05 for square hinge
+                    tol = adj_matrix.nnz/10
+                    max_iter = 20
+                    reg_param = 10#0.5 for square hinge
+                    dim = 100
+                    num_folds_mf = 10
+
+                    #Bundle up these parameters and use this algorithm
+                    if use_sgd_sh:
+                      loss_type = "squarehinge" #"sigmoid"
+                      alg_params = (learning_rate, loss_type, tol, max_iter, reg_param, dim)
+                      alg = "sgd"
+                      
+                      print ("performing SGD with square-hinge loss...")
+                      avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+                              mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
+                      print ("SGD_SH results:")
+                      print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
+                      print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
+                      print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
+                      results.append((data_file_name, avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time))
+                    if use_sgd_sig:
+                      loss_type = "sigmoid"
+                      alg_params = (learning_rate, loss_type, tol, max_iter, reg_param, dim)
+                      alg = "sgd"
+                      
+                      print ("performing SGD with sigmoid loss...")
+                      avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+                              mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
+                      print ("SGD_SIG results:")
+                      print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
+                      print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
+                      print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
+                      results.append((data_file_name, avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time))
         return results
 
 

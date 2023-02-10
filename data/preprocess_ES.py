@@ -86,9 +86,10 @@ def preprocess(batch_size = 1000, mode = "normal"):
     #Data format: each line FROM_ID TO_ID LABEL
     for line_index in range(4, len(data_lines)): #skip first 4 boilerplate lines
       data = data_lines[line_index].split()
-      from_data.append(int(data[0]))
-      to_data.append(int(data[1]))
-      labels.append(int(data[2]))
+      if (int(data[0])<10000) and (int(data[1])<10000):
+          from_data.append(int(data[0]))
+          to_data.append(int(data[1]))
+          labels.append(int(data[2]))
     #Get the number of people (as given by ID. note: ID starts at 0)
     max_id = len(from_data)
     # Use a sliding window approach to handle large data size
@@ -100,12 +101,12 @@ def preprocess(batch_size = 1000, mode = "normal"):
         batch_from_data = [x for j, (x, y) in enumerate(zip(from_data, to_data)) if start <= j < end]
         batch_to_data = [y for j, (x, y) in enumerate(zip(from_data, to_data)) if start <= j < end]
         batch_labels = [label for j, (x, y, label) in enumerate(zip(from_data, to_data, labels)) if start <= j < end]
+        max_id = max(max(batch_from_data), max(batch_to_data))
 
-        
+        print(max(batch_to_data))
         print(len(batch_labels))
-        print(end-start)
         data_matrix = sp.csr_matrix((np.array(batch_labels), (np.array(batch_from_data), np.array(batch_to_data)) ),
-                                      shape=(end - start, end - start), dtype=np.int8)
+                                       shape=(max_id + 1, max_id + 1), dtype=np.int8)
 
         # Correction to make data matrix symmetric
         if (data_matrix != data_matrix.transpose()).nnz > 0:  # data matrix is not symmetric
