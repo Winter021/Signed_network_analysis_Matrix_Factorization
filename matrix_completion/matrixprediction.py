@@ -22,6 +22,25 @@ import pickle
 
 from sklearn.model_selection import KFold
 
+
+def evaluate(preds, test_labels):
+    total_num_labels = len(test_labels)
+    total_num_neg_labels = len(np.where(test_labels == -1)[0])
+    total_num_pos_labels = total_num_labels - total_num_neg_labels
+    
+    # Calculate the number of correct predictions for negative labels and positive labels
+    correct_predictions_neg_labels = len(np.where(np.logical_and(preds == -1, test_labels == -1))[0])
+    correct_predictions_pos_labels = len(np.where(np.logical_and(preds == 1, test_labels == 1))[0])
+    
+    # Calculate accuracy for negative labels and positive labels
+    accuracy_neg_labels = correct_predictions_neg_labels / total_num_neg_labels
+    accuracy_pos_labels = correct_predictions_pos_labels / total_num_pos_labels
+    
+    return accuracy_neg_labels, accuracy_pos_labels
+
+
+
+
 """
 def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
     dense_adj_matrix = adj_matrix.toarray()
@@ -113,7 +132,7 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
 
 
 
-def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
+def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10, model = None):
   #get folds
   # nonzero_row_indices, nonzero_col_indices = np.nonzero(adj_matrix) # .nonzero() is depreciated
 
@@ -144,7 +163,8 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
   print ("got folds")
 
   #keep track of accuracy, false positive rate
-  accuracy_fold_data = list()
+  accuracy_neg_fold_data = list()
+  accuracy_pos_fold_data = list()
   false_positive_rate_fold_data = list()
   time_fold_data = list()
 
@@ -180,18 +200,25 @@ def kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds=10):
 
     preds = train_complet[test_row_indices, test_col_indices]
 
-    acc, fpr = pipeline.evaluate(preds, test_labels)
-    accuracy_fold_data.append(acc)
-    false_positive_rate_fold_data.append(fpr)
+    acc_neg, acc_pos = evaluate(preds, test_labels)
+    print("Accuracy -ve:", acc_neg);
+    print("Accuracy +ve:", acc_pos)
+    accuracy_neg_fold_data.append(acc_neg)
+    accuracy_pos_fold_data.append(acc_pos)
+
+    #false_positive_rate_fold_data.append(fpr)
     time_fold_data.append(model_time)
 
-  avg_acc = sum(accuracy_fold_data) / float(len(accuracy_fold_data))
-  avg_fpr = sum(false_positive_rate_fold_data) / float(len(false_positive_rate_fold_data))
+  avg_acc_neg = sum(accuracy_neg_fold_data) / float(len(accuracy_neg_fold_data))
+  avg_acc_pos = sum(accuracy_pos_fold_data) / float(len(accuracy_pos_fold_data))
+  acc_neg_stderr = stats.error_width(stats.sample_std(accuracy_neg_fold_data), num_folds)
+  acc_pos_stderr = stats.error_width(stats.sample_std(accuracy_pos_fold_data), num_folds)
   avg_time = sum(time_fold_data) / float(len(time_fold_data))
-  acc_stderr = stats.error_width(stats.sample_std(accuracy_fold_data), num_folds)
-  fpr_stderr = stats.error_width(stats.sample_std(false_positive_rate_fold_data), num_folds)
   time_stderr = stats.error_width(stats.sample_std(time_fold_data), num_folds)
-  return avg_acc, acc_stderr, avg_fpr, fpr_stderr, avg_time, time_stderr
+  return avg_acc_neg, acc_neg_stderr, avg_acc_pos, acc_pos_stderr, avg_time, time_stderr
+
+
+
 
 
 

@@ -196,8 +196,8 @@ def run_experiment():
     use_moi = False
     use_hoc = False
     use_svp = False
-    use_sgd_sh = True
-    use_sgd_sig = False
+    use_sgd_sh = False
+    use_sgd_sig = True
     use_als = False
 
     adj_matrix = None
@@ -260,31 +260,54 @@ def run_experiment():
                       alg = "sgd"
                       
                       print ("performing SGD with square-hinge loss...")
-                      avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+                      avg_acc_neg, stderr_acc_neg, avg_acc_pos, stderr_acc_pos, avg_time, stderr_time = \
                               mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
                       print ("SGD_SH results:")
-                      print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
-                      print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
+                      print("Accuracy negative: average %f with standard error %f" % (avg_acc_neg, stderr_acc_neg))
+                      print("Accuracy negative: average %f with standard error %f" % (avg_acc_pos, stderr_acc_pos))
+                      #print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
                       print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
-                      results.append((data_file_name, avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time))
+                      results.append((data_file_name, avg_acc_neg, stderr_acc_neg, avg_acc_pos, stderr_acc_pos, avg_time, stderr_time))
                     if use_sgd_sig:
                       loss_type = "sigmoid"
                       alg_params = (learning_rate, loss_type, tol, max_iter, reg_param, dim)
                       alg = "sgd"
                       
                       print ("performing SGD with sigmoid loss...")
-                      avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time = \
+                      avg_acc_neg, stderr_acc_neg, avg_acc_pos, stderr_acc_pos, avg_time, stderr_time = \
                               mf.kfold_CV_pipeline(adj_matrix, alg, alg_params, num_folds_mf)
-                      print ("SGD_SIG results:")
-                      print("Accuracy: average %f with standard error %f" % (avg_acc, stderr_acc))
-                      print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
+                      print ("SGD_SH results:")
+                      print("Accuracy negative: average %f with standard error %f" % (avg_acc_neg, stderr_acc_neg))
+                      print("Accuracy negative: average %f with standard error %f" % (avg_acc_pos, stderr_acc_pos))
+                      #print("False positive rate: average %f with standard error %f" % (avg_fpr, stderr_fpr))
                       print("Model running time: average %f with standard error %f" % (avg_time, stderr_time))
-                      results.append((data_file_name, avg_acc, stderr_acc, avg_fpr, stderr_fpr, avg_time, stderr_time))
+                      results.append((data_file_name, avg_acc_neg, stderr_acc_neg, avg_acc_pos, stderr_acc_pos, avg_time, stderr_time))
+                    print(len(results))
         return results
 
 
+def avg_neg_acc(results):
+    total = 0
+    num_files = len(results)
+    for r in results:
+        total += r[1]
+    return total / num_files
+
+def avg_pos_acc(results):
+    total = 0
+    num_files = len(results)
+    for r in results:
+        total += r[3]
+    return total / num_files
+
+
 if __name__ == "__main__":
-  run_experiment()
+  res = run_experiment()
+  avg_neg = avg_neg_acc(res)
+  avg_pos = avg_pos_acc(res)
+  print("Final: Average Negative Accuracy:", avg_neg)
+  print("Final: Average Positive Accuracy:", avg_pos)
+
 
 
 

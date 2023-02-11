@@ -67,7 +67,7 @@ def preprocess(batch_size = 1000, mode = "normal"):
 """
 
 
-def preprocess(batch_size = 1000, mode = "normal"):
+def preprocess(batch_size = 20000, mode = "normal"):
   FILE_PATH = "Raw Data/soc-sign-evomain.txt"
   #FILE_PATH = "Raw Data/soc-evomain.txt"
   #FILE_PATH = "Raw Data/soc-sign-Slashdot090221.txt"
@@ -86,7 +86,7 @@ def preprocess(batch_size = 1000, mode = "normal"):
     #Data format: each line FROM_ID TO_ID LABEL
     for line_index in range(4, len(data_lines)): #skip first 4 boilerplate lines
       data = data_lines[line_index].split()
-      if (int(data[0])<10000) and (int(data[1])<10000):
+      if (int(data[0])<30000) and (int(data[1])<30000):
           from_data.append(int(data[0]))
           to_data.append(int(data[1]))
           labels.append(int(data[2]))
