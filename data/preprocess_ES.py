@@ -101,10 +101,13 @@ def preprocess(batch_size = 20000, mode = "normal"):
         batch_from_data = [x for j, (x, y) in enumerate(zip(from_data, to_data)) if start <= j < end]
         batch_to_data = [y for j, (x, y) in enumerate(zip(from_data, to_data)) if start <= j < end]
         batch_labels = [label for j, (x, y, label) in enumerate(zip(from_data, to_data, labels)) if start <= j < end]
-        max_id = max(max(batch_from_data), max(batch_to_data))
+        if len(batch_from_data) == 0 or len(batch_to_data) == 0:
+            max_id = 0
+        else:
+            max_id = max(max(batch_from_data), max(batch_to_data))
 
-        print(max(batch_to_data))
-        print(len(batch_labels))
+        #print(max(batch_to_data))
+        #print(len(batch_labels))
         data_matrix = sp.csr_matrix((np.array(batch_labels), (np.array(batch_from_data), np.array(batch_to_data)) ),
                                        shape=(max_id + 1, max_id + 1), dtype=np.int8)
 
